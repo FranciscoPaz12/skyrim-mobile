@@ -1,0 +1,27 @@
+#Dependencias instaladas por npm
+node_modules/
+
+#Archivos con contraseñas y variables de entorno
+.env
+.env.*
+!.env.example
+
+#Certificados y claves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+
+#Archivos temporales de Expo
+.expo/
+dist/
+web-build/
+
+#Archivos de sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+
+#Archivos de registro
+*.log
+npm-debug.log*

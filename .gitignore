@@ -1,0 +1,23 @@
+#Dependencias
+node_modules/
+
+#Variables de entorno
+.env
+.env.*
+!.env.example
+
+#Certificados
+*.pem
+*.key
+*.p12
+*.pfx
+
+#Archivos generados por Expo
+.expo/
+dist/
+web-build/
+
+#Archivos temporales
+*.log
+.DS_Store
+Thumbs.db
