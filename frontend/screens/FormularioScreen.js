@@ -1,6 +1,5 @@
-
 //Importa React y la funcion para administrar los estados del formulario
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 //Importa los componentes necesarios para construir el formulario
 import {
@@ -13,11 +12,12 @@ import {
     StyleSheet,
     Alert,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Keyboard
 } from "react-native";
 
-//Define la direccion de nuestra API de Node.js
-const API_URL = "http://localhost:3000";
+//Define la direccion publica del backend alojado en Render
+const API_URL = "https://skyrim-mobile-api.onrender.com";
 
 //Define el formulario para crear o modificar ingredientes
 export default function FormularioScreen({ navigation, route }) {
@@ -51,6 +51,28 @@ export default function FormularioScreen({ navigation, route }) {
 
     //Almacena los mensajes de error o confirmacion
     const [mensaje, setMensaje] = useState("");
+    //Guarda la referencia del formulario desplazable
+
+    const scrollRef = useRef(null);
+
+    //Almacena la altura del teclado cuando aparece
+    const [alturaTeclado, setAlturaTeclado] = useState(0);
+
+    //Detecta cuando el teclado aparece o desaparece
+    useEffect(() => {
+        const mostrar = Keyboard.addListener("keyboardDidShow", (evento) => {
+            setAlturaTeclado(evento.endCoordinates.height);
+        });
+
+        const ocultar = Keyboard.addListener("keyboardDidHide", () => {
+            setAlturaTeclado(0);
+        });
+
+        return () => {
+            mostrar.remove();
+            ocultar.remove();
+        };
+    }, []);
 
     //Valida y envia el nuevo ingrediente a la API
     async function guardarIngrediente() {
@@ -127,15 +149,20 @@ export default function FormularioScreen({ navigation, route }) {
     //Construye el formulario visual para registrar ingredientes
     return (
         <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            style={styles.contenedor}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}>
 
         <ScrollView
-            style={styles.contenedor}
-            contentContainerStyle={styles.contenido}
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={[
+                styles.contenido,
+                { paddingBottom: alturaTeclado + 100 }
+            ]}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
+            
         >
+
             <Text style={styles.titulo}>
                 {editando ? "EDITAR INGREDIENTE" : "NUEVO INGREDIENTE"}
             </Text>
@@ -234,8 +261,10 @@ const styles = StyleSheet.create({
 
     //Configura los espacios internos del formulario
     contenido: {
-        padding: 24,
-        paddingBottom: 40
+        flexGrow: 1,
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        paddingBottom: 100
     },
 
     //Configura el titulo del formulario

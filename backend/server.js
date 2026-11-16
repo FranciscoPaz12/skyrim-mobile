@@ -379,6 +379,417 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
+ //Define la ruta GET para consultar las pociones registradas
+app.get("/api/pociones", async (req, res) => {
+    try {
+        //Obtiene las pociones y los nombres de sus ingredientes
+        const [pociones] = await conexion.query(
+            `SELECT
+                p.ID,
+                p.Nombre,
+                p.Ingrediente1ID,
+                p.Ingrediente2ID,
+                p.Magnitud,
+                i1.Nombre AS Ingrediente1,
+                i2.Nombre AS Ingrediente2
+            FROM pociones p
+            INNER JOIN ingredientes i1
+                ON p.Ingrediente1ID = i1.ID
+            INNER JOIN ingredientes i2
+                ON p.Ingrediente2ID = i2.ID
+            ORDER BY p.Nombre`
+        );
+
+        //Obtiene los efectos asociados a las pociones
+        const [efectos] = await conexion.query(
+            `SELECT PocionID, NombreEfecto
+             FROM efectospocion
+             ORDER BY ID`
+        );
+
+        //Agrega los efectos correspondientes a cada pocion
+        const resultado = pociones.map(pocion => ({
+            ...pocion,
+            Efectos: efectos
+                .filter(efecto => efecto.PocionID === pocion.ID)
+                .map(efecto => efecto.NombreEfecto)
+        }));
+
+        //Devuelve las pociones con sus ingredientes y efectos
+        res.json(resultado);
+
+    } catch (error) {
+        //Muestra el error en la consola del servidor
+        console.error("Error al obtener pociones:", error.message);
+
+        //Informa que no fue posible consultar las pociones
+        res.status(500).json({
+            error: "No se pudieron obtener las pociones"
+        });
+    }
+});
+
+ //Define la ruta POST para crear una pocion combinando dos ingredientes
+app.post("/api/pociones", async (req, res) => {
+    //Prepara una conexion para realizar una transaccion
+    let cliente;
+
+    try {
+        //Obtiene los datos enviados desde la aplicacion
+        const { Nombre, Ingrediente1ID, Ingrediente2ID } = req.body;
+
+        //Comprueba que el nombre sea valido
+        if (typeof Nombre !== "string" || !Nombre.trim()) {
+            return res.status(400).json({
+                error: "El nombre de la pocion es obligatorio"
+            });
+        }
+
+        //Comprueba que los identificadores sean numeros enteros positivos
+        if (
+            !Number.isSafeInteger(Ingrediente1ID) ||
+            !Number.isSafeInteger(Ingrediente2ID) ||
+            Ingrediente1ID <= 0 ||
+            Ingrediente2ID <= 0 ||
+            Ingrediente1ID === Ingrediente2ID
+        ) {
+            return res.status(400).json({
+                error: "Selecciona dos ingredientes diferentes y validos"
+            });
+        }
+
+        //Obtiene los ingredientes seleccionados desde TiDB Cloud
+        const [ingredientes] = await conexion.query(
+            "SELECT * FROM ingredientes WHERE ID IN (?, ?)",
+            [Ingrediente1ID, Ingrediente2ID]
+        );
+
+        //Comprueba que ambos ingredientes existan
+        if (ingredientes.length !== 2) {
+            return res.status(404).json({
+                error: "Uno o ambos ingredientes no existen"
+            });
+        }
+
+        //Obtiene los efectos del primer ingrediente
+        const efectos1 = [
+            ingredientes[0].Efecto1,
+            ingredientes[0].Efecto2,
+            ingredientes[0].Efecto3,
+            ingredientes[0].Efecto4
+        ];
+
+        //Obtiene los efectos del segundo ingrediente
+        const efectos2 = [
+            ingredientes[1].Efecto1,
+            ingredientes[1].Efecto2,
+            ingredientes[1].Efecto3,
+            ingredientes[1].Efecto4
+        ];
+
+        //Calcula los efectos que comparten ambos ingredientes
+        const efectosCompartidos = [...new Set(
+            efectos1.filter(efecto =>
+                efectos2.some(otro =>
+                    otro.trim().toLowerCase() === efecto.trim().toLowerCase()
+                )
+            )
+        )];
+
+        //Impide crear una pocion sin efectos compartidos
+        if (efectosCompartidos.length === 0) {
+            return res.status(400).json({
+                error: "Los ingredientes no comparten efectos"
+            });
+        }
+
+        //Calcula el promedio de calidad de ambos ingredientes
+        const promedio = (
+            ingredientes[0].Calidad + ingredientes[1].Calidad
+        ) / 2;
+
+        //Redondea hacia arriba para obtener la magnitud
+        const magnitud = Math.ceil(promedio);
+
+        //Obtiene una conexion exclusiva para guardar todos los datos juntos
+        cliente = await conexion.getConnection();
+
+        //Inicia la transaccion
+        await cliente.beginTransaction();
+
+        //Guarda la pocion y obtiene su identificador
+        const [resultado] = await cliente.execute(
+            `INSERT INTO pociones
+             (Nombre, Ingrediente1ID, Ingrediente2ID, Magnitud)
+             VALUES (?, ?, ?, ?)`,
+            [
+                Nombre.trim(),
+                Ingrediente1ID,
+                Ingrediente2ID,
+                magnitud
+            ]
+        );
+
+        //Guarda cada efecto asociado a la nueva pocion
+        for (const efecto of efectosCompartidos) {
+            await cliente.execute(
+                `INSERT INTO efectospocion
+                 (PocionID, NombreEfecto)
+                 VALUES (?, ?)`,
+                [resultado.insertId, efecto]
+            );
+        }
+
+        //Confirma todos los cambios realizados
+        await cliente.commit();
+
+        //Devuelve la informacion de la pocion creada
+        res.status(201).json({
+            mensaje: "Pocion creada correctamente",
+            ID: resultado.insertId,
+            Nombre: Nombre.trim(),
+            Ingrediente1ID,
+            Ingrediente2ID,
+            Magnitud: magnitud,
+            Efectos: efectosCompartidos
+        });
+
+    } catch (error) {
+        //Revierte los cambios si ocurre un error
+        if (cliente) {
+            await cliente.rollback();
+        }
+
+        //Muestra el error en la consola
+        console.error("Error al crear pocion:", error.message);
+
+        //Informa que no fue posible guardar la pocion
+        res.status(500).json({
+            error: "No se pudo crear la pocion"
+        });
+
+    } finally {
+        //Libera la conexion para que pueda reutilizarse
+        if (cliente) {
+            cliente.release();
+        }
+    }
+});
+
+ //Define la ruta DELETE para eliminar una pocion por su ID
+app.delete("/api/pociones/:id", async (req, res) => {
+    try {
+        //Obtiene el ID de la pocion desde la URL
+        const id = Number(req.params.id);
+
+        //Comprueba que el ID sea un numero entero positivo
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({
+                error: "ID invalido"
+            });
+        }
+
+        //Elimina la pocion indicada de TiDB Cloud
+        const [resultado] = await conexion.execute(
+            "DELETE FROM pociones WHERE ID = ?",
+            [id]
+        );
+
+        //Comprueba si la pocion existia
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Pocion no encontrada"
+            });
+        }
+
+        //Confirma que la pocion fue eliminada
+        res.json({
+            mensaje: "Pocion eliminada correctamente",
+            ID: id
+        });
+
+    } catch (error) {
+        //Muestra el error en la consola del servidor
+        console.error("Error al eliminar pocion:", error.message);
+
+        //Informa que no fue posible eliminar la pocion
+        res.status(500).json({
+            error: "No se pudo eliminar la pocion"
+        });
+    }
+});
+
+ //Define la ruta PUT para modificar una pocion existente
+app.put("/api/pociones/:id", async (req, res) => {
+    let cliente;
+
+    try {
+        //Obtiene el ID de la pocion y sus nuevos datos
+        const id = Number(req.params.id);
+        const { Nombre, Ingrediente1ID, Ingrediente2ID } = req.body;
+
+        //Comprueba que el ID sea valido
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({
+                error: "ID invalido"
+            });
+        }
+
+        //Comprueba que el nombre sea valido
+        if (typeof Nombre !== "string" || !Nombre.trim()) {
+            return res.status(400).json({
+                error: "El nombre de la pocion es obligatorio"
+            });
+        }
+
+        //Comprueba que se seleccionaron dos ingredientes diferentes
+        if (
+            !Number.isSafeInteger(Ingrediente1ID) ||
+            !Number.isSafeInteger(Ingrediente2ID) ||
+            Ingrediente1ID <= 0 ||
+            Ingrediente2ID <= 0 ||
+            Ingrediente1ID === Ingrediente2ID
+        ) {
+            return res.status(400).json({
+                error: "Selecciona dos ingredientes diferentes y validos"
+            });
+        }
+
+        //Obtiene una conexion para trabajar con una transaccion
+        cliente = await conexion.getConnection();
+        await cliente.beginTransaction();
+
+        //Comprueba que la pocion exista
+        const [pociones] = await cliente.execute(
+            "SELECT ID FROM pociones WHERE ID = ?",
+            [id]
+        );
+
+        if (pociones.length === 0) {
+            await cliente.rollback();
+            return res.status(404).json({
+                error: "Pocion no encontrada"
+            });
+        }
+
+        //Obtiene los ingredientes seleccionados
+        const [ingredientes] = await cliente.query(
+            "SELECT * FROM ingredientes WHERE ID IN (?, ?)",
+            [Ingrediente1ID, Ingrediente2ID]
+        );
+
+        if (ingredientes.length !== 2) {
+            await cliente.rollback();
+            return res.status(404).json({
+                error: "Uno o ambos ingredientes no existen"
+            });
+        }
+
+        //Obtiene los efectos de ambos ingredientes
+        const efectos1 = [
+            ingredientes[0].Efecto1,
+            ingredientes[0].Efecto2,
+            ingredientes[0].Efecto3,
+            ingredientes[0].Efecto4
+        ];
+
+        const efectos2 = [
+            ingredientes[1].Efecto1,
+            ingredientes[1].Efecto2,
+            ingredientes[1].Efecto3,
+            ingredientes[1].Efecto4
+        ];
+
+        //Calcula los efectos compartidos
+        const efectosCompartidos = [...new Set(
+            efectos1.filter(efecto =>
+                efectos2.some(otro =>
+                    otro.trim().toLowerCase() === efecto.trim().toLowerCase()
+                )
+            )
+        )];
+
+        //Impide guardar pociones sin efectos compartidos
+        if (efectosCompartidos.length === 0) {
+            await cliente.rollback();
+            return res.status(400).json({
+                error: "Los ingredientes no comparten efectos"
+            });
+        }
+
+        //Calcula el promedio de calidad de los ingredientes
+        const promedio = (
+            ingredientes[0].Calidad + ingredientes[1].Calidad
+        ) / 2;
+
+        //Redondea hacia arriba para obtener la magnitud
+        const magnitud = Math.ceil(promedio);
+
+        //Actualiza los datos principales de la pocion
+        await cliente.execute(
+            `UPDATE pociones
+             SET Nombre = ?, Ingrediente1ID = ?,
+                 Ingrediente2ID = ?, Magnitud = ?
+             WHERE ID = ?`,
+            [
+                Nombre.trim(),
+                Ingrediente1ID,
+                Ingrediente2ID,
+                magnitud,
+                id
+            ]
+        );
+
+        //Elimina los efectos anteriores de la pocion
+        await cliente.execute(
+            "DELETE FROM efectospocion WHERE PocionID = ?",
+            [id]
+        );
+
+        //Guarda los nuevos efectos compartidos
+        for (const efecto of efectosCompartidos) {
+            await cliente.execute(
+                `INSERT INTO efectospocion
+                 (PocionID, NombreEfecto)
+                 VALUES (?, ?)`,
+                [id, efecto]
+            );
+        }
+
+        //Confirma todos los cambios realizados
+        await cliente.commit();
+
+        //Devuelve la pocion actualizada
+        res.json({
+            mensaje: "Pocion modificada correctamente",
+            ID: id,
+            Nombre: Nombre.trim(),
+            Ingrediente1ID,
+            Ingrediente2ID,
+            Magnitud: magnitud,
+            Efectos: efectosCompartidos
+        });
+
+    } catch (error) {
+        //Revierte los cambios si ocurre un error
+        if (cliente) {
+            await cliente.rollback();
+        }
+
+        console.error("Error al modificar pocion:", error.message);
+
+        res.status(500).json({
+            error: "No se pudo modificar la pocion"
+        });
+
+    } finally {
+        //Libera la conexion utilizada
+        if (cliente) {
+            cliente.release();
+        }
+    }
+});
+
 //Inicia el servidor Express utilizando el puerto configurado
 app.listen(PORT, () => {
     //Muestra en la consola la direccion local del servidor

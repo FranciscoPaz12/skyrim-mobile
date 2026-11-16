@@ -1,19 +1,23 @@
 
-//Importa React y el estado necesario para almacenar los datos del formulario
+ //Importa React y el estado necesario para almacenar los datos del formulario
 import { useState } from "react";
 
-//Importa los componentes visuales utilizados en la pantalla de login
+//Importa los componentes visuales y las herramientas para controlar el teclado
 import {
     View,
     Text,
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    ScrollView,
+    Keyboard,
+    Platform
 } from "react-native";
 
-//Define la direccion del backend que se ejecuta en la computadora
-const API_URL = "http://localhost:3000";
+//Define la direccion publica del backend alojado en Render
+const API_URL = "https://skyrim-mobile-api.onrender.com";
 
 //Define la pantalla de inicio de sesion
 export default function LoginScreen({ navigation }) {
@@ -36,6 +40,9 @@ export default function LoginScreen({ navigation }) {
             setError("Completa el usuario y la contraseña");
             return;
         }
+
+        //Cierra el teclado antes de realizar la solicitud
+        Keyboard.dismiss();
 
         try {
             //Activa el indicador de carga y limpia los errores anteriores
@@ -77,57 +84,84 @@ export default function LoginScreen({ navigation }) {
 
     //Construye los elementos visuales de la pantalla
     return (
-        <View style={styles.contenedor}>
-            <Text style={styles.titulo}>SKYRIM</Text>
-            <Text style={styles.subtitulo}>Gestor de Alquimia</Text>
-
-            <Text style={styles.etiqueta}>Usuario</Text>
-
-            <TextInput
-                style={styles.entrada}
-                placeholder="Ingresa tu usuario"
-                value={usuario}
-                onChangeText={setUsuario}
-                autoCapitalize="none"
-            />
-
-            <Text style={styles.etiqueta}>Contraseña</Text>
-
-            <TextInput
-                style={styles.entrada}
-                placeholder="Ingresa tu contraseña"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-
-            {error ? (
-                <Text style={styles.error}>{error}</Text>
-            ) : null}
-
-            <TouchableOpacity
-                style={styles.boton}
-                onPress={iniciarSesion}
-                disabled={cargando}
+        <KeyboardAvoidingView
+            style={styles.contenedor}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+            <ScrollView
+                contentContainerStyle={styles.contenido}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
             >
-                {cargando ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                    <Text style={styles.textoBoton}>INICIAR SESION</Text>
-                )}
-            </TouchableOpacity>
-        </View>
+                <View style={styles.formulario}>
+                    <Text style={styles.titulo}>SKYRIM</Text>
+                    <Text style={styles.subtitulo}>Gestor de Alquimia</Text>
+
+                    <Text style={styles.etiqueta}>Usuario</Text>
+
+                    <TextInput
+                        style={styles.entrada}
+                        placeholder="Ingresa tu usuario"
+                        placeholderTextColor="#A0A0A0"
+                        value={usuario}
+                        onChangeText={setUsuario}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="next"
+                    />
+
+                    <Text style={styles.etiqueta}>Contraseña</Text>
+
+                    <TextInput
+                        style={styles.entrada}
+                        placeholder="Ingresa tu contraseña"
+                        placeholderTextColor="#A0A0A0"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        returnKeyType="done"
+                        onSubmitEditing={iniciarSesion}
+                    />
+
+                    {error ? (
+                        <Text style={styles.error}>{error}</Text>
+                    ) : null}
+
+                    <TouchableOpacity
+                        style={styles.boton}
+                        onPress={iniciarSesion}
+                        disabled={cargando}
+                    >
+                        {cargando ? (
+                            <ActivityIndicator color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.textoBoton}>INICIAR SESION</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 //Define los estilos visuales utilizados en la pantalla
 const styles = StyleSheet.create({
-    //Configura el fondo y la distribucion general del formulario
+    //Configura el fondo general de la pantalla
     contenedor: {
         flex: 1,
-        justifyContent: "center",
-        padding: 24,
         backgroundColor: "#161A1D"
+    },
+
+    //Permite desplazar el contenido y mantenerlo centrado cuando hay espacio
+    contenido: {
+        flexGrow: 1,
+        justifyContent: "center",
+        padding: 24
+    },
+
+    //Agrupa los elementos del formulario
+    formulario: {
+        width: "100%"
     },
 
     //Configura el titulo principal de Skyrim
@@ -188,3 +222,4 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     }
 });
+

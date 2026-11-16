@@ -12,11 +12,12 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     StyleSheet,
-    Alert
+    Alert,
+    Keyboard
 } from "react-native";
 
-//Define la direccion de nuestra API
-const API_URL = "http://localhost:3000";
+//Define la direccion publica del backend alojado en Render
+const API_URL = "https://skyrim-mobile-api.onrender.com";
 
 //Define la pantalla que muestra los ingredientes registrados
 export default function IngredientesScreen({ navigation }) {
@@ -139,13 +140,19 @@ async function eliminarIngrediente(id) {
             placeholderTextColor="#999999"
             value={busqueda}
             onChangeText={setBusqueda}
-            onSubmitEditing={() => cargarIngredientes(busqueda)}
+            onSubmitEditing={() => {
+                Keyboard.dismiss();
+                cargarIngredientes(busqueda);
+            }}
             returnKeyType="search"
             />
 
             <TouchableOpacity
                 style={styles.botonBuscar}
-                onPress={() => cargarIngredientes(busqueda)}
+                onPress={() => {
+                    Keyboard.dismiss();
+                    cargarIngredientes(busqueda);
+                }}
             >
                 <Text style={styles.textoBoton}>BUSCAR</Text>
             </TouchableOpacity>
@@ -158,6 +165,8 @@ async function eliminarIngrediente(id) {
                 <FlatList
                     data={ingredientes}
                     keyExtractor={(item) => String(item.ID)}
+                    keyboardDismissMode="on-drag"
+                    keyboardShouldPersistTaps="handled"
                     ListEmptyComponent={
                         <Text style={styles.vacio}>
                             No hay ingredientes registrados
@@ -210,6 +219,15 @@ async function eliminarIngrediente(id) {
             )}
 
             <TouchableOpacity
+                style={styles.botonPociones}
+                onPress={() => navigation.navigate("Pociones")}
+            >
+                <Text style={styles.textoBotonPociones}>
+                    VER POCIONES
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
                 style={styles.boton}
                 onPress={() => navigation.navigate("Formulario")}
             >
@@ -220,12 +238,14 @@ async function eliminarIngrediente(id) {
 }
 
 //Define los estilos visuales de la pantalla
-const styles = StyleSheet.create({
+    const styles = StyleSheet.create({
     //Configura el fondo y los espacios generales
     contenedor: {
         flex: 1,
         backgroundColor: "#161A1D",
-        padding: 20
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 80
     },
 
     //Configura el titulo principal
@@ -264,6 +284,24 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 20
     },
+
+    //Define el estilo del boton para acceder a pociones
+    botonPociones: {
+    backgroundColor: "#39434A",
+    borderWidth: 1,
+    borderColor: "#D8C29D",
+    borderRadius: 6,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 12
+},
+
+    //Define el estilo del texto del boton de pociones
+    textoBotonPociones: {
+    color: "#D8C29D",
+    fontSize: 16,
+    fontWeight: "bold"
+},
 
     //Configura el boton para editar un ingrediente existente
     botonEditar: {
