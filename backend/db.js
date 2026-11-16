@@ -1,5 +1,5 @@
 
-//Importa mysql2 con soporte para promesas y operaciones asincronicas
+ //Importa mysql2 con soporte para promesas y operaciones asincronicas
 const mysql = require("mysql2/promise");
 
 //Importa el modulo fs para leer archivos del sistema
@@ -7,6 +7,11 @@ const fs = require("fs");
 
 //Carga las variables de entorno almacenadas en el archivo .env
 require("dotenv").config();
+
+//Obtiene el certificado desde una variable de entorno o desde un archivo local
+const certificado = process.env.DB_SSL_CA_BASE64
+    ? Buffer.from(process.env.DB_SSL_CA_BASE64, "base64").toString("utf8")
+    : fs.readFileSync(process.env.DB_SSL_CA, "utf8");
 
 //Crea un conjunto de conexiones para comunicarse con TiDB Cloud
 const conexion = mysql.createPool({
@@ -27,8 +32,8 @@ const conexion = mysql.createPool({
 
     //Configura una conexion segura mediante el protocolo SSL
     ssl: {
-        //Lee el certificado de seguridad desde la ruta indicada en .env
-        ca: fs.readFileSync(process.env.DB_SSL_CA),
+        //Utiliza el certificado obtenido desde Render o desde el archivo local
+        ca: certificado,
 
         //Comprueba que el certificado del servidor sea valido
         rejectUnauthorized: true
