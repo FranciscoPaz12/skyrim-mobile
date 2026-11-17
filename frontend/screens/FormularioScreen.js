@@ -2,19 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 
 //Importa los componentes necesarios para construir el formulario
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    ActivityIndicator,
-    StyleSheet,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Keyboard
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
+
+import axios from "axios";
 
 //Define la direccion publica del backend alojado en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
@@ -74,7 +64,7 @@ export default function FormularioScreen({ navigation, route }) {
         };
     }, []);
 
-    //Valida y envia el nuevo ingrediente a la API
+    //Valida y envia el ingrediente a la API
     async function guardarIngrediente() {
         //Comprueba que todos los campos de texto esten completos
         if (![nombre, efecto1, efecto2, efecto3, efecto4].every(
@@ -100,51 +90,50 @@ export default function FormularioScreen({ navigation, route }) {
             setCargando(true);
             setMensaje("");
 
+            //Prepara los datos del ingrediente
+            const datosIngrediente = {
+                Nombre: nombre.trim(),
+                Efecto1: efecto1.trim(),
+                Efecto2: efecto2.trim(),
+                Efecto3: efecto3.trim(),
+                Efecto4: efecto4.trim(),
+                Calidad: calidadNumero
+            };
 
-            //Selecciona la ruta de actualizacion o creacion segun el formulario
+            //Selecciona la ruta segun la operacion
             const url = editando
                 ? `${API_URL}/api/ingredientes/${ingrediente.ID}`
                 : `${API_URL}/api/ingredientes`;
 
-            //Utiliza PUT para modificar y POST para crear ingredientes
-            const metodo = editando ? "PUT" : "POST";
-
-            //Envia los datos a la API utilizando la operacion correspondiente
-            const respuesta = await fetch(url, {
-                method: metodo,
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    Nombre: nombre.trim(),
-                    Efecto1: efecto1.trim(),
-                    Efecto2: efecto2.trim(),
-                    Efecto3: efecto3.trim(),
-                    Efecto4: efecto4.trim(),
-                    Calidad: calidadNumero
-                })
-            });
-
-            //Convierte la respuesta del servidor a un objeto JavaScript
-            const datos = await respuesta.json();
-
-            //Comprueba si el servidor rechazo la solicitud
-            if (!respuesta.ok) {
-                setMensaje(datos.error || "No se pudo guardar el ingrediente");
-                return;
+            //Envia los datos mediante Axios
+            if (editando) {
+                await axios.put(url, datosIngrediente);
+            } else {
+                await axios.post(url, datosIngrediente);
             }
 
             //Regresa al listado despues de guardar correctamente
             navigation.goBack();
 
         } catch (errorConexion) {
-            //Informa cuando no se puede conectar con el backend
-            setMensaje("No se pudo conectar con el servidor");
+            //Recupera el mensaje de error enviado por el backend
+            if (errorConexion.response) {
+                const datos = errorConexion.response.data;
+
+                setMensaje(
+                    datos?.error ||
+                    datos?.mensaje ||
+                    "No se pudo guardar el ingrediente"
+                );
+            } else {
+                setMensaje("No se pudo conectar con el servidor");
+            }
         } finally {
             //Desactiva el indicador de carga
             setCargando(false);
         }
     }
+
 
     //Construye el formulario visual para registrar ingredientes
     return (

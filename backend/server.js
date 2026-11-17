@@ -1,5 +1,4 @@
-
- //Importa Express para crear el servidor y administrar las rutas HTTP
+//Importa Express para crear el servidor y administrar las rutas HTTP
 const express = require("express");
 
 //Importa CORS para permitir solicitudes desde la aplicacion movil

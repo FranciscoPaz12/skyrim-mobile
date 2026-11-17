@@ -1,16 +1,7 @@
 import { useState, useCallback } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    FlatList,
-    ActivityIndicator,
-    TouchableOpacity,
-    Alert,
-    Keyboard,
-    StyleSheet
-} from "react-native";
+import { View, Text, TextInput, FlatList, ActivityIndicator, TouchableOpacity, Alert, Keyboard, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import axios from "axios";
 
 //Direccion publica del backend
 const API_URL = "https://skyrim-mobile-api.onrender.com";
@@ -29,14 +20,10 @@ export default function PocionesScreen({ navigation }) {
             setCargando(true);
             setMensaje("");
 
-            const respuesta = await fetch(`${API_URL}/api/pociones`);
+            //Obtiene las pociones desde la API mediante Axios
+            const respuesta = await axios.get(`${API_URL}/api/pociones`);
 
-            if (!respuesta.ok) {
-                throw new Error("Error al consultar pociones");
-            }
-
-            const datos = await respuesta.json();
-            setPociones(datos);
+            setPociones(respuesta.data);
 
         } catch (error) {
             setMensaje("No se pudieron cargar las pociones");
@@ -73,13 +60,8 @@ export default function PocionesScreen({ navigation }) {
     //Elimina la pocion de la base de datos
     async function eliminarPocion(id) {
         try {
-            const respuesta = await fetch(`${API_URL}/api/pociones/${id}`, {
-                method: "DELETE"
-            });
-
-            if (!respuesta.ok) {
-                throw new Error("No se pudo eliminar la pocion");
-            }
+            //Elimina la pocion seleccionada mediante Axios
+            await axios.delete(`${API_URL}/api/pociones/${id}`);
 
             Alert.alert("Exito", "Pocion eliminada correctamente");
 
@@ -90,12 +72,11 @@ export default function PocionesScreen({ navigation }) {
             Alert.alert("Error", "No se pudo eliminar la pocion");
         }
     }
-        //Aplica la busqueda cuando el usuario presiona el boton
+    //Aplica la busqueda cuando el usuario presiona el boton
     function buscarPociones() {
         Keyboard.dismiss();
         setFiltro(busqueda.trim().toLowerCase());
     }
-
     //Filtra las pociones por nombre, ingredientes o efectos
     const pocionesFiltradas = pociones.filter(pocion => {
         if (!filtro) return true;
@@ -158,7 +139,7 @@ export default function PocionesScreen({ navigation }) {
         );
     }
 
-    
+
     return (
         <View style={styles.contenedor}>
 

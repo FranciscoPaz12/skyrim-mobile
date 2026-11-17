@@ -1,5 +1,4 @@
-
- //Importa el efecto necesario para configurar la barra al iniciar la aplicacion
+//Importa el efecto necesario para configurar la barra al iniciar la aplicacion
 import { useEffect } from "react";
 
 //Importa el sistema operativo para aplicar cambios solamente en Android
@@ -61,7 +60,7 @@ export default function App() {
     return (
         <NavigationContainer>
             <Stack.Navigator initialRouteName="Login">
-                
+
                 <Stack.Screen
                     name="Login"
                     component={LoginScreen}

@@ -1,15 +1,6 @@
-
 import { useEffect, useState } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    ActivityIndicator,
-    Alert,
-    StyleSheet
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import axios from "axios";
 
 //Define la direccion publica del backend
 const API_URL = "https://skyrim-mobile-api.onrender.com";
@@ -33,18 +24,65 @@ export default function FormularioPocionScreen({ navigation, route }) {
 
     const [guardando, setGuardando] = useState(false);
 
+    //Obtiene los ingredientes seleccionados
+    const ingredienteSeleccionado1 = ingredientes.find(
+        item => item.ID === ingrediente1
+    );
+
+    const ingredienteSeleccionado2 = ingredientes.find(
+        item => item.ID === ingrediente2
+    );
+
+    //Calcula los efectos compartidos entre ambos ingredientes
+    const efectosCompartidos = [];
+
+    if (ingredienteSeleccionado1 && ingredienteSeleccionado2 &&
+        ingrediente1 !== ingrediente2) {
+
+        const efectos1 = [
+            ingredienteSeleccionado1.Efecto1,
+            ingredienteSeleccionado1.Efecto2,
+            ingredienteSeleccionado1.Efecto3,
+            ingredienteSeleccionado1.Efecto4
+        ];
+
+        const efectos2 = [
+            ingredienteSeleccionado2.Efecto1,
+            ingredienteSeleccionado2.Efecto2,
+            ingredienteSeleccionado2.Efecto3,
+            ingredienteSeleccionado2.Efecto4
+        ];
+
+        efectos1.forEach(efecto => {
+            const compartido = efectos2.some(otro =>
+                otro.trim().toLowerCase() === efecto.trim().toLowerCase()
+            );
+
+            if (compartido && !efectosCompartidos.some(
+                existente => existente.trim().toLowerCase() === efecto.trim().toLowerCase()
+            )) {
+                efectosCompartidos.push(efecto);
+            }
+        });
+    }
+
+    //Calcula la magnitud estimada de la pocion
+    const magnitud = ingredienteSeleccionado1 && ingredienteSeleccionado2
+        ? Math.ceil(
+            (Number(ingredienteSeleccionado1.Calidad) +
+            Number(ingredienteSeleccionado2.Calidad)) / 2
+        )
+        : null;
+
     //Obtiene los ingredientes registrados en la base de datos
     useEffect(() => {
         async function cargarIngredientes() {
             try {
-                const respuesta = await fetch(`${API_URL}/api/ingredientes`);
+                //Consulta los ingredientes mediante Axios
+                const respuesta = await axios.get(`${API_URL}/api/ingredientes`);
 
-                if (!respuesta.ok) {
-                    throw new Error("No se pudieron obtener los ingredientes");
-                }
+                setIngredientes(respuesta.data);
 
-                const datos = await respuesta.json();
-                setIngredientes(datos);
             } catch (error) {
                 Alert.alert("Error", "No se pudieron cargar los ingredientes");
             } finally {
@@ -75,31 +113,23 @@ export default function FormularioPocionScreen({ navigation, route }) {
         try {
             setGuardando(true);
 
+            //Prepara los datos de la pocion
+            const datosPocion = {
+                Nombre: nombre.trim(),
+                Ingrediente1ID: ingrediente1,
+                Ingrediente2ID: ingrediente2
+            };
+
             //Selecciona el endpoint segun la operacion
             const url = esEdicion
                 ? `${API_URL}/api/pociones/${pocionEditar.ID}`
                 : `${API_URL}/api/pociones`;
 
-            const respuesta = await fetch(url, {
-                method: esEdicion ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    Nombre: nombre.trim(),
-                    Ingrediente1ID: ingrediente1,
-                    Ingrediente2ID: ingrediente2
-                })
-            });
-
-            const datos = await respuesta.json();
-
-            if (!respuesta.ok) {
-                Alert.alert(
-                    esEdicion ? "No se pudo editar la pocion" : "No se pudo crear la pocion",
-                    datos.error || datos.mensaje || "Verifica los ingredientes seleccionados"
-                );
-                return;
+            //Envia los datos mediante Axios
+            if (esEdicion) {
+                await axios.put(url, datosPocion);
+            } else {
+                await axios.post(url, datosPocion);
             }
 
             Alert.alert(
@@ -110,7 +140,18 @@ export default function FormularioPocionScreen({ navigation, route }) {
             navigation.navigate("Pociones");
 
         } catch (error) {
-            Alert.alert("Error", "No se pudo conectar con el servidor");
+            //Recupera el mensaje enviado por el backend
+            if (error.response) {
+                const datos = error.response.data;
+
+                Alert.alert(
+                    esEdicion ? "No se pudo editar la pocion" : "No se pudo crear la pocion",
+                    datos?.error || datos?.mensaje || "Verifica los ingredientes seleccionados"
+                );
+            } else {
+                Alert.alert("Error", "No se pudo conectar con el servidor");
+            }
+
         } finally {
             setGuardando(false);
         }
@@ -193,6 +234,32 @@ export default function FormularioPocionScreen({ navigation, route }) {
             {/*Permite seleccionar el segundo ingrediente*/}
             <Text style={styles.etiqueta}>Segundo ingrediente</Text>
             {mostrarIngredientes(ingrediente2, setIngrediente2)}
+
+            {/*Muestra una vista previa de la combinacion*/}
+            {ingredienteSeleccionado1 && ingredienteSeleccionado2 &&
+            ingrediente1 !== ingrediente2 && (
+                <View style={styles.vistaPrevia}>
+                    <Text style={styles.etiqueta}>EFECTOS COMPARTIDOS</Text>
+
+                    {efectosCompartidos.length > 0 ? (
+                        <>
+                            {efectosCompartidos.map((efecto, indice) => (
+                                <Text key={indice} style={styles.textoVistaPrevia}>
+                                    • {efecto}
+                                </Text>
+                            ))}
+
+                            <Text style={styles.textoVistaPrevia}>
+                                Magnitud: {["", "I", "II", "III"][magnitud]}
+                            </Text>
+                        </>
+                    ) : (
+                        <Text style={styles.textoError}>
+                            Los ingredientes no comparten efectos.
+                        </Text>
+                    )}
+                </View>
+            )}
 
             {/*Guarda la pocion en la base de datos*/}
             <TouchableOpacity
@@ -295,5 +362,23 @@ const styles = StyleSheet.create({
     texto: {
         color: "#FFFFFF",
         marginTop: 12
+    },
+    vistaPrevia: {
+    backgroundColor: "#292F33",
+    borderWidth: 1,
+    borderColor: "#665A45",
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 20
+    },
+    textoVistaPrevia: {
+        color: "#FFFFFF",
+        fontSize: 15,
+        marginBottom: 8
+    },
+    textoError: {
+        color: "#FF8585",
+        fontSize: 14,
+        marginTop: 8
     }
 });

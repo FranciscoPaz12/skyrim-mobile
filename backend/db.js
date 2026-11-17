@@ -1,5 +1,4 @@
-
- //Importa mysql2 con soporte para promesas y operaciones asincronicas
+//Importa mysql2 con soporte para promesas y operaciones asincronicas
 const mysql = require("mysql2/promise");
 
 //Importa el modulo fs para leer archivos del sistema

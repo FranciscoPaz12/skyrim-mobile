@@ -1,20 +1,10 @@
-
- //Importa React y el estado necesario para almacenar los datos del formulario
+//Importa React y el estado necesario para almacenar los datos del formulario
 import { useState } from "react";
 
 //Importa los componentes visuales y las herramientas para controlar el teclado
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    ScrollView,
-    Keyboard,
-    Platform
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, ScrollView, Keyboard, Platform } from "react-native";
+
+import axios from "axios";
 
 //Define la direccion publica del backend alojado en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
@@ -49,38 +39,32 @@ export default function LoginScreen({ navigation }) {
             setCargando(true);
             setError("");
 
-            //Envia las credenciales al backend mediante una solicitud POST
-            const respuesta = await fetch(`${API_URL}/api/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    usuario: usuario.trim(),
-                    password: password
-                })
+            //Envia las credenciales al backend utilizando Axios
+            await axios.post(`${API_URL}/api/login`, {
+                usuario: usuario.trim(),
+                password: password
             });
-
-            //Convierte la respuesta del servidor a un objeto JavaScript
-            const datos = await respuesta.json();
-
-            //Comprueba si el servidor rechazo las credenciales
-            if (!respuesta.ok) {
-                setError(datos.error || "No se pudo iniciar sesion");
-                return;
-            }
 
             //Abre la pantalla de ingredientes cuando el login es correcto
             navigation.replace("Ingredientes");
 
         } catch (errorConexion) {
-            //Muestra un mensaje cuando no se puede conectar con el servidor
-            setError("No se pudo conectar con el servidor");
+            //Comprueba si el backend devolvio un error
+            if (errorConexion.response) {
+                const datos = errorConexion.response.data;
+
+                //Muestra el mensaje enviado por el servidor
+                setError(datos?.error || "No se pudo iniciar sesion");
+            } else {
+                //Informa cuando no se puede conectar con el servidor
+                setError("No se pudo conectar con el servidor");
+            }
         } finally {
             //Desactiva el indicador de carga al terminar la solicitud
             setCargando(false);
         }
     }
+
 
     //Construye los elementos visuales de la pantalla
     return (

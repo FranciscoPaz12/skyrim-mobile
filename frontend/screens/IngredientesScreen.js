@@ -4,17 +4,9 @@ import { useState, useCallback } from "react";
 //Importa el hook que detecta cuando una pantalla recibe el foco
 import { useFocusEffect } from "@react-navigation/native";
 
-import {
-    View,
-    Text,
-    TextInput,
-    FlatList,
-    TouchableOpacity,
-    ActivityIndicator,
-    StyleSheet,
-    Alert,
-    Keyboard
-} from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Keyboard } from "react-native";
+
+import axios from "axios";
 
 //Define la direccion publica del backend alojado en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
@@ -36,30 +28,21 @@ export default function IngredientesScreen({ navigation }) {
 
     //Consulta los ingredientes registrados y permite filtrarlos por nombre
     async function cargarIngredientes(textoBusqueda = "") {
-
         try {
             //Activa la carga y limpia los errores anteriores
             setCargando(true);
             setError("");
 
-            //Codifica el texto para enviarlo correctamente en la URL
-            const textoCodificado = encodeURIComponent(textoBusqueda);
-
-            //Consulta los ingredientes utilizando el filtro del backend
-            const respuesta = await fetch(
-                `${API_URL}/api/ingredientes?buscar=${textoCodificado}`
-            );
-
-            //Comprueba si la solicitud fue exitosa
-            if (!respuesta.ok) {
-                throw new Error("No se pudieron obtener los ingredientes");
-            }
-
-            //Convierte la respuesta JSON en un arreglo
-            const datos = await respuesta.json();
+            //Consulta los ingredientes utilizando Axios
+            const respuesta = await axios.get(`${API_URL}/api/ingredientes`, {
+                params: {
+                    buscar: textoBusqueda
+                }
+            });
 
             //Actualiza la lista con los ingredientes recibidos
-            setIngredientes(datos);
+            setIngredientes(respuesta.data);
+
         } catch (errorConexion) {
             //Muestra un mensaje si falla la consulta
             setError("No se pudieron cargar los ingredientes");
@@ -67,32 +50,31 @@ export default function IngredientesScreen({ navigation }) {
             //Finaliza el estado de carga
             setCargando(false);
         }
-}
-
-//Elimina un ingrediente de la base de datos mediante su ID
-async function eliminarIngrediente(id) {
-    try {
-        //Envia una solicitud DELETE al backend
-        const respuesta = await fetch(`${API_URL}/api/ingredientes/${id}`, {
-            method: "DELETE"
-        });
-
-        //Convierte la respuesta del servidor a un objeto JavaScript
-        const datos = await respuesta.json();
-
-        //Comprueba si el servidor rechazo la eliminacion
-        if (!respuesta.ok) {
-            Alert.alert("Error", datos.error || "No se pudo eliminar el ingrediente");
-            return;
-        }
-
-        //Actualiza el listado despues de eliminar el ingrediente
-        await cargarIngredientes(busqueda);
-    } catch (errorConexion) {
-        //Informa cuando no se puede completar la solicitud
-        Alert.alert("Error", "No se pudo conectar con el servidor");
     }
-}
+
+    //Elimina un ingrediente de la base de datos mediante su ID
+    async function eliminarIngrediente(id) {
+        try {
+            //Envia una solicitud DELETE al backend
+            await axios.delete(`${API_URL}/api/ingredientes/${id}`);
+
+            //Actualiza el listado despues de eliminar el ingrediente
+            await cargarIngredientes(busqueda);
+
+        } catch (errorConexion) {
+            //Comprueba si el backend envio un mensaje de error
+            if (errorConexion.response) {
+                const datos = errorConexion.response.data;
+
+                Alert.alert(
+                    "Error",
+                    datos?.error || "No se pudo eliminar el ingrediente"
+                );
+            } else {
+                Alert.alert("Error", "No se pudo conectar con el servidor");
+            }
+        }
+    }
 
     //Solicita confirmacion antes de eliminar un ingrediente
     function confirmarEliminacion(ingrediente) {
@@ -177,7 +159,7 @@ async function eliminarIngrediente(id) {
                             <Text style={styles.nombre}>{item.Nombre}</Text>
 
                             <Text style={styles.detalle}>
-                                Calidad: {item.Calidad}
+                                Calidad: {["", "I", "II", "III"][item.Calidad]}
                             </Text>
 
                             <Text style={styles.detalle}>
@@ -389,16 +371,6 @@ async function eliminarIngrediente(id) {
         color: "#FFFFFF",
         fontSize: 15,
         fontWeight: "bold"
-    },
-        //Define el estilo del boton para eliminar ingredientes
-    botonEliminar: {
-        backgroundColor: "#653333",
-        borderWidth: 1,
-        borderColor: "#B76E6E",
-        borderRadius: 6,
-        padding: 12,
-        alignItems: "center",
-        marginTop: 10
     },
     //Define el estilo del texto del boton eliminar
     textoBotonEliminar: {
