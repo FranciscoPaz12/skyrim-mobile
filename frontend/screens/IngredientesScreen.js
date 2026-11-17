@@ -21,6 +21,7 @@ const API_URL = "https://skyrim-mobile-api.onrender.com";
 
 //Define la pantalla que muestra los ingredientes registrados
 export default function IngredientesScreen({ navigation }) {
+
     //Almacena los ingredientes obtenidos desde la base de datos
     const [ingredientes, setIngredientes] = useState([]);
 
@@ -35,6 +36,7 @@ export default function IngredientesScreen({ navigation }) {
 
     //Consulta los ingredientes registrados y permite filtrarlos por nombre
     async function cargarIngredientes(textoBusqueda = "") {
+
         try {
             //Activa la carga y limpia los errores anteriores
             setCargando(true);
@@ -117,12 +119,11 @@ async function eliminarIngrediente(id) {
     }
 
 
-    //Actualiza los ingredientes cada vez que regresamos a esta pantalla
     useFocusEffect(
         useCallback(() => {
-            //Consulta nuevamente los ingredientes respetando la busqueda actual
-            cargarIngredientes(busqueda);
-        }, [busqueda])
+            //Carga todos los ingredientes al ingresar a la pantalla
+            cargarIngredientes();
+        }, [])
     );
 
     //Construye la interfaz de la pantalla de ingredientes
@@ -156,7 +157,6 @@ async function eliminarIngrediente(id) {
             >
                 <Text style={styles.textoBoton}>BUSCAR</Text>
             </TouchableOpacity>
-
             {cargando ? (
                 <ActivityIndicator size="large" color="#D8C29D" />
             ) : error ? (
@@ -210,7 +210,7 @@ async function eliminarIngrediente(id) {
                                 style={styles.botonEliminar}
                                 onPress={() => confirmarEliminacion(item)}
                             >
-                                <Text style={styles.textoBoton}>ELIMINAR</Text>
+                                <Text style={styles.textoBotonEliminar}>ELIMINAR</Text>
                             </TouchableOpacity>
 
                         </View>
@@ -228,10 +228,21 @@ async function eliminarIngrediente(id) {
             </TouchableOpacity>
 
             <TouchableOpacity
-                style={styles.boton}
+                    style={styles.botonPociones}
+                    onPress={() => navigation.navigate("FormularioPocion")}
+                >
+                    <Text style={styles.textoBotonPociones}>
+                        CREAR POCION
+                    </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.botonPociones}
                 onPress={() => navigation.navigate("Formulario")}
             >
-                <Text style={styles.textoBoton}>AGREGAR INGREDIENTE</Text>
+                <Text style={styles.textoBotonPociones}>
+                    AGREGAR INGREDIENTE
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -315,11 +326,13 @@ async function eliminarIngrediente(id) {
 
     //Configura el boton para eliminar un ingrediente
     botonEliminar: {
-        backgroundColor: "#8B3434",
+        backgroundColor: "#653333",
+        borderWidth: 1,
+        borderColor: "#B76E6E",
         borderRadius: 6,
         padding: 12,
         alignItems: "center",
-        marginTop: 8
+        marginTop: 10
     },
 
 
@@ -376,5 +389,21 @@ async function eliminarIngrediente(id) {
         color: "#FFFFFF",
         fontSize: 15,
         fontWeight: "bold"
-    }
-});
+    },
+        //Define el estilo del boton para eliminar ingredientes
+    botonEliminar: {
+        backgroundColor: "#653333",
+        borderWidth: 1,
+        borderColor: "#B76E6E",
+        borderRadius: 6,
+        padding: 12,
+        alignItems: "center",
+        marginTop: 10
+    },
+    //Define el estilo del texto del boton eliminar
+    textoBotonEliminar: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "bold"
+    },
+    });

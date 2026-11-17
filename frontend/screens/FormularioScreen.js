@@ -160,8 +160,27 @@ export default function FormularioScreen({ navigation, route }) {
                 { paddingBottom: alturaTeclado + 100 }
             ]}
             keyboardShouldPersistTaps="handled"
-            
         >
+        <TouchableOpacity
+            style={styles.botonNavegacion}
+            onPress={() => navigation.navigate("Ingredientes")}
+        >
+            <Text style={styles.textoNavegacion}>VER INGREDIENTES</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+            style={styles.botonNavegacion}
+            onPress={() => navigation.navigate("Pociones")}
+        >
+            <Text style={styles.textoNavegacion}>VER POCIONES</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+            style={styles.botonNavegacion}
+            onPress={() => navigation.navigate("FormularioPocion")}
+        >
+            <Text style={styles.textoNavegacion}>CREAR POCION</Text>
+        </TouchableOpacity>
 
             <Text style={styles.titulo}>
                 {editando ? "EDITAR INGREDIENTE" : "NUEVO INGREDIENTE"}
@@ -346,5 +365,21 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "bold"
-    }
+    },
+    //Define el estilo de los botones de navegacion
+    botonNavegacion: {
+        backgroundColor: "#39434A",
+        borderWidth: 1,
+        borderColor: "#D8C29D",
+        borderRadius: 6,
+        padding: 12,
+        alignItems: "center",
+        marginBottom: 10
+    },
+    //Define el estilo del texto de navegacion
+    textoNavegacion: {
+        color: "#D8C29D",
+        fontSize: 14,
+        fontWeight: "bold"
+},
 });
