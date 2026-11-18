@@ -1,68 +1,60 @@
-//Importa React y las funciones necesarias para administrar los estados
+//Estados y funciones de React
 import { useState, useCallback } from "react";
 
-//Importa el hook que detecta cuando una pantalla recibe el foco
+//Detecta cuando se vuelve a esta pantalla
 import { useFocusEffect } from "@react-navigation/native";
 
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Keyboard } from "react-native";
 
 import axios from "axios";
 
-//Define la direccion publica del backend alojado en Render
+//Direccion de la API en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
 
-//Define la pantalla que muestra los ingredientes registrados
+//Pantalla de ingredientes
 export default function IngredientesScreen({ navigation }) {
 
-    //Almacena los ingredientes obtenidos desde la base de datos
+    //Lista de ingredientes recibidos
     const [ingredientes, setIngredientes] = useState([]);
 
-    //Almacena el texto utilizado para buscar ingredientes
+    //Texto del buscador
     const [busqueda, setBusqueda] = useState("");
 
-    //Indica si se estan cargando los ingredientes
+    //Estado de carga
     const [cargando, setCargando] = useState(true);
 
-    //Almacena los mensajes de error
+    //Mensaje de error
     const [error, setError] = useState("");
 
-    //Consulta los ingredientes registrados y permite filtrarlos por nombre
+    //Consulta los ingredientes y aplica la busqueda
     async function cargarIngredientes(textoBusqueda = "") {
         try {
-            //Activa la carga y limpia los errores anteriores
             setCargando(true);
             setError("");
 
-            //Consulta los ingredientes utilizando Axios
             const respuesta = await axios.get(`${API_URL}/api/ingredientes`, {
                 params: {
                     buscar: textoBusqueda
                 }
             });
 
-            //Actualiza la lista con los ingredientes recibidos
             setIngredientes(respuesta.data);
 
         } catch (errorConexion) {
-            //Muestra un mensaje si falla la consulta
             setError("No se pudieron cargar los ingredientes");
         } finally {
-            //Finaliza el estado de carga
             setCargando(false);
         }
     }
 
-    //Elimina un ingrediente de la base de datos mediante su ID
+    //Elimina el ingrediente seleccionado
     async function eliminarIngrediente(id) {
         try {
-            //Envia una solicitud DELETE al backend
             await axios.delete(`${API_URL}/api/ingredientes/${id}`);
 
-            //Actualiza el listado despues de eliminar el ingrediente
             await cargarIngredientes(busqueda);
 
         } catch (errorConexion) {
-            //Comprueba si el backend envio un mensaje de error
             if (errorConexion.response) {
                 const datos = errorConexion.response.data;
 
@@ -76,12 +68,10 @@ export default function IngredientesScreen({ navigation }) {
         }
     }
 
-    //Solicita confirmacion antes de eliminar un ingrediente
+    //Pide confirmacion antes de eliminar
     function confirmarEliminacion(ingrediente) {
-        //Muestra una confirmacion para evitar eliminaciones accidentales
         const confirmar = () => eliminarIngrediente(ingrediente.ID);
 
-        //Utiliza la confirmacion del navegador cuando ejecutamos Expo Web
         if (typeof window !== "undefined" && window.confirm) {
             if (window.confirm(`¿Eliminar ${ingrediente.Nombre}?`)) {
                 confirmar();
@@ -89,7 +79,6 @@ export default function IngredientesScreen({ navigation }) {
             return;
         }
 
-        //Utiliza el cuadro de confirmacion nativo en Android
         Alert.alert(
             "Eliminar ingrediente",
             `¿Seguro que queres eliminar ${ingrediente.Nombre}?`,
@@ -103,12 +92,12 @@ export default function IngredientesScreen({ navigation }) {
 
     useFocusEffect(
         useCallback(() => {
-            //Carga todos los ingredientes al ingresar a la pantalla
+            //Actualiza la lista al entrar a la pantalla
             cargarIngredientes();
         }, [])
     );
 
-    //Construye la interfaz de la pantalla de ingredientes
+    //Interfaz de ingredientes
     return (
         <View style={styles.contenedor}>
             <Text style={styles.titulo}>INGREDIENTES</Text>
@@ -230,9 +219,8 @@ export default function IngredientesScreen({ navigation }) {
     );
 }
 
-//Define los estilos visuales de la pantalla
+//Estilos de la pantalla
     const styles = StyleSheet.create({
-    //Configura el fondo y los espacios generales
     contenedor: {
         flex: 1,
         backgroundColor: "#161A1D",
@@ -241,7 +229,6 @@ export default function IngredientesScreen({ navigation }) {
         paddingBottom: 80
     },
 
-    //Configura el titulo principal
     titulo: {
         color: "#D8C29D",
         fontSize: 28,
@@ -250,14 +237,12 @@ export default function IngredientesScreen({ navigation }) {
         marginBottom: 8
     },
 
-    //Configura el subtitulo
     subtitulo: {
         color: "#C8C8C8",
         fontSize: 14,
         textAlign: "center",
         marginBottom: 20
     },
-    //Configura el campo para buscar ingredientes
     buscador: {
         backgroundColor: "#292F33",
         borderWidth: 1,
@@ -269,7 +254,6 @@ export default function IngredientesScreen({ navigation }) {
         marginBottom: 10
     },
 
-    //Configura el boton para ejecutar la busqueda
     botonBuscar: {
         backgroundColor: "#806A43",
         borderRadius: 6,
@@ -278,7 +262,6 @@ export default function IngredientesScreen({ navigation }) {
         marginBottom: 20
     },
 
-    //Define el estilo del boton para acceder a pociones
     botonPociones: {
     backgroundColor: "#39434A",
     borderWidth: 1,
@@ -289,14 +272,12 @@ export default function IngredientesScreen({ navigation }) {
     marginBottom: 12
 },
 
-    //Define el estilo del texto del boton de pociones
     textoBotonPociones: {
     color: "#D8C29D",
     fontSize: 16,
     fontWeight: "bold"
 },
 
-    //Configura el boton para editar un ingrediente existente
     botonEditar: {
         backgroundColor: "#665A45",
         borderRadius: 6,
@@ -306,7 +287,6 @@ export default function IngredientesScreen({ navigation }) {
     },
 
 
-    //Configura el boton para eliminar un ingrediente
     botonEliminar: {
         backgroundColor: "#653333",
         borderWidth: 1,
@@ -318,7 +298,6 @@ export default function IngredientesScreen({ navigation }) {
     },
 
 
-    //Configura las tarjetas de ingredientes
     tarjeta: {
         backgroundColor: "#292F33",
         borderWidth: 1,
@@ -328,7 +307,6 @@ export default function IngredientesScreen({ navigation }) {
         marginBottom: 12
     },
 
-    //Configura el nombre de cada ingrediente
     nombre: {
         color: "#D8C29D",
         fontSize: 18,
@@ -336,28 +314,24 @@ export default function IngredientesScreen({ navigation }) {
         marginBottom: 8
     },
 
-    //Configura la informacion de los ingredientes
     detalle: {
         color: "#E0E0E0",
         fontSize: 14,
         marginBottom: 4
     },
 
-    //Configura los mensajes de error
     error: {
         color: "#FF8585",
         textAlign: "center",
         marginTop: 20
     },
 
-    //Configura el mensaje cuando no existen ingredientes
     vacio: {
         color: "#C8C8C8",
         textAlign: "center",
         marginTop: 20
     },
 
-    //Configura el boton para agregar ingredientes
     boton: {
         backgroundColor: "#806A43",
         borderRadius: 6,
@@ -366,13 +340,11 @@ export default function IngredientesScreen({ navigation }) {
         marginTop: 12
     },
 
-    //Configura el texto del boton
     textoBoton: {
         color: "#FFFFFF",
         fontSize: 15,
         fontWeight: "bold"
     },
-    //Define el estilo del texto del boton eliminar
     textoBotonEliminar: {
         color: "#FFFFFF",
         fontSize: 14,

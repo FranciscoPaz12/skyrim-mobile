@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import axios from "axios";
 
-//Define la direccion publica del backend
+//Direccion del backend en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
 
-//Define el formulario para crear pociones
+//Formulario para crear o editar pociones
 export default function FormularioPocionScreen({ navigation, route }) {
 
+    //Recibe la pocion si se esta editando
     const pocionEditar = route.params?.pocion;
 
     const esEdicion = Boolean(pocionEditar);
 
+    //Estados del formulario
     const [nombre, setNombre] = useState(pocionEditar?.Nombre ?? "");
 
     const [ingredientes, setIngredientes] = useState([]);
@@ -24,7 +26,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
 
     const [guardando, setGuardando] = useState(false);
 
-    //Obtiene los ingredientes seleccionados
+    //Busca los ingredientes elegidos
     const ingredienteSeleccionado1 = ingredientes.find(
         item => item.ID === ingrediente1
     );
@@ -33,7 +35,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
         item => item.ID === ingrediente2
     );
 
-    //Calcula los efectos compartidos entre ambos ingredientes
+    //Compara los efectos de ambos ingredientes
     const efectosCompartidos = [];
 
     if (ingredienteSeleccionado1 && ingredienteSeleccionado2 &&
@@ -66,7 +68,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
         });
     }
 
-    //Calcula la magnitud estimada de la pocion
+    //Calcula la magnitud promedio redondeada hacia arriba
     const magnitud = ingredienteSeleccionado1 && ingredienteSeleccionado2
         ? Math.ceil(
             (Number(ingredienteSeleccionado1.Calidad) +
@@ -74,11 +76,10 @@ export default function FormularioPocionScreen({ navigation, route }) {
         )
         : null;
 
-    //Obtiene los ingredientes registrados en la base de datos
+    //Carga los ingredientes al abrir el formulario
     useEffect(() => {
         async function cargarIngredientes() {
             try {
-                //Consulta los ingredientes mediante Axios
                 const respuesta = await axios.get(`${API_URL}/api/ingredientes`);
 
                 setIngredientes(respuesta.data);
@@ -93,7 +94,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
         cargarIngredientes();
     }, []);
 
-    //Envia la nueva pocion al backend
+    //Valida y guarda la pocion en la API
     async function guardarPocion() {
         if (!nombre.trim()) {
             Alert.alert("Atencion", "Ingresa un nombre para la pocion");
@@ -113,19 +114,18 @@ export default function FormularioPocionScreen({ navigation, route }) {
         try {
             setGuardando(true);
 
-            //Prepara los datos de la pocion
+            //Prepara los datos para enviar al servidor
             const datosPocion = {
                 Nombre: nombre.trim(),
                 Ingrediente1ID: ingrediente1,
                 Ingrediente2ID: ingrediente2
             };
 
-            //Selecciona el endpoint segun la operacion
+            //Usa PUT para editar y POST para crear
             const url = esEdicion
                 ? `${API_URL}/api/pociones/${pocionEditar.ID}`
                 : `${API_URL}/api/pociones`;
 
-            //Envia los datos mediante Axios
             if (esEdicion) {
                 await axios.put(url, datosPocion);
             } else {
@@ -140,7 +140,6 @@ export default function FormularioPocionScreen({ navigation, route }) {
             navigation.navigate("Pociones");
 
         } catch (error) {
-            //Recupera el mensaje enviado por el backend
             if (error.response) {
                 const datos = error.response.data;
 
@@ -157,7 +156,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
         }
     }
 
-    //Muestra los ingredientes disponibles para cada seleccion
+    //Muestra los botones para elegir ingredientes
     function mostrarIngredientes(seleccionado, cambiarSeleccion) {
         return ingredientes.map(ingrediente => (
             <TouchableOpacity
@@ -175,6 +174,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
         ));
     }
 
+    //Muestra una pantalla de espera durante la carga
     if (cargando) {
         return (
             <View style={styles.contenedorCarga}>
@@ -195,7 +195,6 @@ export default function FormularioPocionScreen({ navigation, route }) {
                 {esEdicion ? "EDITAR POCION" : "CREAR POCION"}
             </Text>
 
-            {/*Permite navegar a las otras secciones*/}
             <TouchableOpacity
                 style={styles.botonNavegacion}
                 onPress={() => navigation.navigate("Ingredientes")}
@@ -217,7 +216,6 @@ export default function FormularioPocionScreen({ navigation, route }) {
                 <Text style={styles.textoBoton}>CREAR INGREDIENTE</Text>
             </TouchableOpacity>
 
-            {/*Permite ingresar el nombre de la pocion*/}
             <Text style={styles.etiqueta}>Nombre de la pocion</Text>
             <TextInput
                 style={styles.entrada}
@@ -227,15 +225,12 @@ export default function FormularioPocionScreen({ navigation, route }) {
                 onChangeText={setNombre}
             />
 
-            {/*Permite seleccionar el primer ingrediente*/}
             <Text style={styles.etiqueta}>Primer ingrediente</Text>
             {mostrarIngredientes(ingrediente1, setIngrediente1)}
 
-            {/*Permite seleccionar el segundo ingrediente*/}
             <Text style={styles.etiqueta}>Segundo ingrediente</Text>
             {mostrarIngredientes(ingrediente2, setIngrediente2)}
 
-            {/*Muestra una vista previa de la combinacion*/}
             {ingredienteSeleccionado1 && ingredienteSeleccionado2 &&
             ingrediente1 !== ingrediente2 && (
                 <View style={styles.vistaPrevia}>
@@ -261,7 +256,6 @@ export default function FormularioPocionScreen({ navigation, route }) {
                 </View>
             )}
 
-            {/*Guarda la pocion en la base de datos*/}
             <TouchableOpacity
                 style={styles.botonGuardar}
                 onPress={guardarPocion}
@@ -277,7 +271,7 @@ export default function FormularioPocionScreen({ navigation, route }) {
     );
 }
 
-//Define los estilos visuales del formulario
+//Estilos visuales de la pantalla
 const styles = StyleSheet.create({
     contenedor: {
         flex: 1,

@@ -1,85 +1,67 @@
 
-//Importa bcrypt para proteger las contraseñas mediante hashes
 const bcrypt = require("bcrypt");
-
-//Importa la conexion a TiDB Cloud configurada en db.js
 const conexion = require("./db");
 
-//Define una funcion asincronica para crear un usuario en la base de datos
+//Actualiza la contraseña del administrador en TiDB
 async function crearUsuario() {
     try {
-        //Establece el nombre del usuario que se va a registrar
+        //Datos del administrador
         const nombre = "Administrador";
-
-        //Establece el nombre de usuario utilizado para iniciar sesion
         const usuario = "admin";
-
-        //Obtiene la contraseña desde la variable ADMIN_PASSWORD del archivo .env
         const password = process.env.ADMIN_PASSWORD;
 
-        //Comprueba que exista una contraseña y tenga al menos 12 caracteres
+        //Valida que exista una contraseña de al menos 12 caracteres
         if (!password || password.length < 12) {
-            //Detiene la operacion e informa que la contraseña no cumple los requisitos
             throw new Error(
                 "Configura ADMIN_PASSWORD con al menos 12 caracteres en .env"
             );
         }
 
-        //Genera un hash de la contraseña utilizando bcrypt con un costo de 10
+        //Convierte la contraseña en un hash con bcrypt
         const passwordHash = await bcrypt.hash(password, 10);
 
         /*
-        //Inserta el nuevo usuario en TiDB mediante una consulta SQL parametrizada
+        //Consulta original para crear un usuario
         const [resultado] = await conexion.execute(
             `INSERT INTO usuarios (Nombre, Usuario, PasswordHash)
              VALUES (?, ?, ?)`,
-            //Envia el nombre, usuario y hash a los parametros de la consulta
             [nombre, usuario, passwordHash]
         );
         */
 
-        //Actualiza la contraseña del administrador existente en TiDB Cloud
+        //Actualiza la contraseña del usuario admin
         const [resultado] = await conexion.execute(
             "UPDATE usuarios SET PasswordHash = ? WHERE Usuario = ?",
             [passwordHash, usuario]
         );
 
-        //Comprueba que se haya encontrado el usuario administrador
+        //Comprueba si se modifico algun usuario
         if (resultado.affectedRows === 0) {
             throw new Error("No se encontro el usuario admin");
         }
 
-        /*//Muestra un mensaje cuando el usuario se registra correctamente
+        /*
         console.log("Usuario creado correctamente");
-
-        //Muestra el identificador generado automaticamente por TiDB
         console.log("ID:", resultado.insertId);
-
-        //Muestra el nombre de usuario registrado
         console.log("Usuario:", usuario);
         */
 
-        //Confirma que la contraseña del administrador fue actualizada
+        //Muestra el resultado de la actualizacion
         console.log("Contraseña actualizada correctamente");
-
-        //Muestra el nombre del usuario modificado
         console.log("Usuario:", usuario);
 
-
     } catch (error) {
-        //Comprueba si el error corresponde a un usuario duplicado
+        //Controla los errores de la operacion
         if (error.code === "ER_DUP_ENTRY") {
-            //Informa que el usuario admin ya se encuentra registrado
             console.log("El usuario admin ya existe");
         } else {
-            //Muestra cualquier otro error ocurrido durante el registro
             console.error("Error:", error.message);
         }
     } finally {
-        //Cierra el pool de conexiones al finalizar la operacion
+        //Cierra las conexiones a la base de datos
         await conexion.end();
     }
 }
 
-//Ejecuta la funcion encargada de crear el usuario administrador
+//Ejecuta la funcion
 crearUsuario();

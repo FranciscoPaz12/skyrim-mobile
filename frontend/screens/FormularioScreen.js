@@ -1,22 +1,22 @@
-//Importa React y la funcion para administrar los estados del formulario
+//Estados, referencias y efectos de React
 import { useState, useRef, useEffect } from "react";
 
-//Importa los componentes necesarios para construir el formulario
+//Componentes de la interfaz
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
 
 import axios from "axios";
 
-//Define la direccion publica del backend alojado en Render
+//Direccion de la API en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
 
-//Define el formulario para crear o modificar ingredientes
+//Formulario para crear o editar ingredientes
 export default function FormularioScreen({ navigation, route }) {
-    //Obtiene el ingrediente seleccionado o null cuando se crea uno nuevo
+    //Recibe el ingrediente que se va a editar
     const ingrediente = route.params?.ingrediente ?? null;
 
-    //Determina si el formulario esta en modo edicion
+    //Indica si estamos editando
     const editando = ingrediente !== null;
-    //Almacena el nombre del ingrediente
+
 
     //Almacena el nombre actual o el nombre del ingrediente seleccionado
     const [nombre, setNombre] = useState(ingrediente?.Nombre ?? "");
@@ -48,7 +48,7 @@ export default function FormularioScreen({ navigation, route }) {
     //Almacena la altura del teclado cuando aparece
     const [alturaTeclado, setAlturaTeclado] = useState(0);
 
-    //Detecta cuando el teclado aparece o desaparece
+    //Detecta cuando aparece o desaparece el teclado
     useEffect(() => {
         const mostrar = Keyboard.addListener("keyboardDidShow", (evento) => {
             setAlturaTeclado(evento.endCoordinates.height);
@@ -64,7 +64,7 @@ export default function FormularioScreen({ navigation, route }) {
         };
     }, []);
 
-    //Valida y envia el ingrediente a la API
+    //Valida y guarda el ingrediente
     async function guardarIngrediente() {
         //Comprueba que todos los campos de texto esten completos
         if (![nombre, efecto1, efecto2, efecto3, efecto4].every(
@@ -86,7 +86,7 @@ export default function FormularioScreen({ navigation, route }) {
         }
 
         try {
-            //Activa el indicador de carga y limpia los mensajes anteriores
+
             setCargando(true);
             setMensaje("");
 
@@ -100,12 +100,12 @@ export default function FormularioScreen({ navigation, route }) {
                 Calidad: calidadNumero
             };
 
-            //Selecciona la ruta segun la operacion
+            //Elige la ruta segun si crea o edita
             const url = editando
                 ? `${API_URL}/api/ingredientes/${ingrediente.ID}`
                 : `${API_URL}/api/ingredientes`;
 
-            //Envia los datos mediante Axios
+            //Envia los datos con Axios
             if (editando) {
                 await axios.put(url, datosIngrediente);
             } else {
@@ -129,13 +129,13 @@ export default function FormularioScreen({ navigation, route }) {
                 setMensaje("No se pudo conectar con el servidor");
             }
         } finally {
-            //Desactiva el indicador de carga
+
             setCargando(false);
         }
     }
 
 
-    //Construye el formulario visual para registrar ingredientes
+    //Muestra el formulario en pantalla
     return (
         <KeyboardAvoidingView
             style={styles.contenedor}
@@ -259,15 +259,15 @@ export default function FormularioScreen({ navigation, route }) {
     );
 }
 
-//Define los estilos visuales del formulario
+//Estilos de la pantalla
 const styles = StyleSheet.create({
-    //Configura el fondo principal
+
     contenedor: {
         flex: 1,
         backgroundColor: "#161A1D"
     },
 
-    //Configura los espacios internos del formulario
+
     contenido: {
         flexGrow: 1,
         paddingHorizontal: 24,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
         paddingBottom: 100
     },
 
-    //Configura el titulo del formulario
+
     titulo: {
         color: "#D8C29D",
         fontSize: 26,
@@ -284,14 +284,14 @@ const styles = StyleSheet.create({
         marginBottom: 28
     },
 
-    //Configura las etiquetas de los campos
+
     etiqueta: {
         color: "#D8C29D",
         fontSize: 15,
         marginBottom: 8
     },
 
-    //Configura las entradas de texto
+
     entrada: {
         backgroundColor: "#292F33",
         borderWidth: 1,
@@ -303,14 +303,14 @@ const styles = StyleSheet.create({
         marginBottom: 18
     },
 
-    //Organiza horizontalmente los botones de calidad
+
     filaCalidad: {
         flexDirection: "row",
         gap: 12,
         marginBottom: 24
     },
 
-    //Configura cada opcion de calidad
+
     botonCalidad: {
         flex: 1,
         backgroundColor: "#292F33",
@@ -321,27 +321,27 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
 
-    //Resalta la calidad seleccionada
+
     calidadActiva: {
         backgroundColor: "#806A43",
         borderColor: "#D8C29D"
     },
 
-    //Configura el texto de las opciones de calidad
+
     textoCalidad: {
         color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "bold"
     },
 
-    //Configura los mensajes de error
+
     error: {
         color: "#FF8585",
         textAlign: "center",
         marginBottom: 16
     },
 
-    //Configura el boton para guardar ingredientes
+
     botonGuardar: {
         backgroundColor: "#806A43",
         borderRadius: 6,
@@ -349,13 +349,13 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
 
-    //Configura el texto del boton principal
+
     textoBoton: {
         color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "bold"
     },
-    //Define el estilo de los botones de navegacion
+
     botonNavegacion: {
         backgroundColor: "#39434A",
         borderWidth: 1,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 10
     },
-    //Define el estilo del texto de navegacion
+
     textoNavegacion: {
         color: "#D8C29D",
         fontSize: 14,

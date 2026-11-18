@@ -1,72 +1,56 @@
-//Importa React y el estado necesario para almacenar los datos del formulario
 import { useState } from "react";
-
-//Importa los componentes visuales y las herramientas para controlar el teclado
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, ScrollView, Keyboard, Platform } from "react-native";
-
 import axios from "axios";
 
-//Define la direccion publica del backend alojado en Render
+//Direccion del backend en Render
 const API_URL = "https://skyrim-mobile-api.onrender.com";
 
-//Define la pantalla de inicio de sesion
+//Pantalla de inicio de sesion
 export default function LoginScreen({ navigation }) {
-    //Almacena el nombre de usuario ingresado
+    //Guarda los datos ingresados y el estado de la solicitud
     const [usuario, setUsuario] = useState("");
-
-    //Almacena la contraseña ingresada
     const [password, setPassword] = useState("");
-
-    //Indica si estamos esperando la respuesta del servidor
     const [cargando, setCargando] = useState(false);
-
-    //Almacena el mensaje de error que se mostrara en pantalla
     const [error, setError] = useState("");
 
-    //Valida las credenciales ingresadas mediante nuestra API
+    //Valida los campos y consulta al backend
     async function iniciarSesion() {
-        //Comprueba que ambos campos tengan contenido
         if (!usuario.trim() || !password) {
             setError("Completa el usuario y la contraseña");
             return;
         }
 
-        //Cierra el teclado antes de realizar la solicitud
         Keyboard.dismiss();
 
         try {
-            //Activa el indicador de carga y limpia los errores anteriores
+            //Muestra la carga y borra errores anteriores
             setCargando(true);
             setError("");
 
-            //Envia las credenciales al backend utilizando Axios
+            //Envia las credenciales a la API
             await axios.post(`${API_URL}/api/login`, {
                 usuario: usuario.trim(),
                 password: password
             });
 
-            //Abre la pantalla de ingredientes cuando el login es correcto
+            //Abre ingredientes si el inicio de sesion fue correcto
             navigation.replace("Ingredientes");
 
         } catch (errorConexion) {
-            //Comprueba si el backend devolvio un error
+            //Muestra errores del servidor o de conexion
             if (errorConexion.response) {
                 const datos = errorConexion.response.data;
-
-                //Muestra el mensaje enviado por el servidor
                 setError(datos?.error || "No se pudo iniciar sesion");
             } else {
-                //Informa cuando no se puede conectar con el servidor
                 setError("No se pudo conectar con el servidor");
             }
         } finally {
-            //Desactiva el indicador de carga al terminar la solicitud
+            //Oculta el indicador de carga
             setCargando(false);
         }
     }
 
-
-    //Construye los elementos visuales de la pantalla
+    //Interfaz del formulario de inicio de sesion
     return (
         <KeyboardAvoidingView
             style={styles.contenedor}
@@ -82,7 +66,6 @@ export default function LoginScreen({ navigation }) {
                     <Text style={styles.subtitulo}>Gestor de Alquimia</Text>
 
                     <Text style={styles.etiqueta}>Usuario</Text>
-
                     <TextInput
                         style={styles.entrada}
                         placeholder="Ingresa tu usuario"
@@ -95,7 +78,6 @@ export default function LoginScreen({ navigation }) {
                     />
 
                     <Text style={styles.etiqueta}>Contraseña</Text>
-
                     <TextInput
                         style={styles.entrada}
                         placeholder="Ingresa tu contraseña"
@@ -128,27 +110,20 @@ export default function LoginScreen({ navigation }) {
     );
 }
 
-//Define los estilos visuales utilizados en la pantalla
+//Estilos de la pantalla
 const styles = StyleSheet.create({
-    //Configura el fondo general de la pantalla
     contenedor: {
         flex: 1,
         backgroundColor: "#161A1D"
     },
-
-    //Permite desplazar el contenido y mantenerlo centrado cuando hay espacio
     contenido: {
         flexGrow: 1,
         justifyContent: "center",
         padding: 24
     },
-
-    //Agrupa los elementos del formulario
     formulario: {
         width: "100%"
     },
-
-    //Configura el titulo principal de Skyrim
     titulo: {
         fontSize: 38,
         fontWeight: "bold",
@@ -156,23 +131,17 @@ const styles = StyleSheet.create({
         textAlign: "center",
         letterSpacing: 5
     },
-
-    //Configura el subtitulo de la aplicacion
     subtitulo: {
         fontSize: 18,
         color: "#C8C8C8",
         textAlign: "center",
         marginBottom: 40
     },
-
-    //Configura las etiquetas de los campos
     etiqueta: {
         color: "#D8C29D",
         fontSize: 15,
         marginBottom: 8
     },
-
-    //Configura las entradas de usuario y contraseña
     entrada: {
         backgroundColor: "#292F33",
         borderWidth: 1,
@@ -183,27 +152,20 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 20
     },
-
-    //Configura el mensaje de error
     error: {
         color: "#FF8585",
         marginBottom: 16,
         textAlign: "center"
     },
-
-    //Configura el boton para iniciar sesion
     boton: {
         backgroundColor: "#806A43",
         padding: 16,
         borderRadius: 6,
         alignItems: "center"
     },
-
-    //Configura el texto del boton
     textoBoton: {
         color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "bold"
     }
 });
-

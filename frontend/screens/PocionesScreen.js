@@ -6,7 +6,7 @@ import axios from "axios";
 //Direccion publica del backend
 const API_URL = "https://skyrim-mobile-api.onrender.com";
 
-//Define la pantalla que muestra las pociones registradas
+//Pantalla para consultar y administrar pociones
 export default function PocionesScreen({ navigation }) {
     const [pociones, setPociones] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -14,13 +14,12 @@ export default function PocionesScreen({ navigation }) {
     const [busqueda, setBusqueda] = useState("");
     const [filtro, setFiltro] = useState("");
 
-    //Consulta las pociones almacenadas en TiDB Cloud
+    //Carga las pociones desde la API
     async function cargarPociones() {
         try {
             setCargando(true);
             setMensaje("");
 
-            //Obtiene las pociones desde la API mediante Axios
             const respuesta = await axios.get(`${API_URL}/api/pociones`);
 
             setPociones(respuesta.data);
@@ -32,13 +31,14 @@ export default function PocionesScreen({ navigation }) {
         }
     }
 
-    //Actualiza el listado cada vez que se abre la pantalla
+    //Recarga las pociones al entrar en la pantalla
     useFocusEffect(
         useCallback(() => {
             cargarPociones();
         }, [])
     );
-    //Solicita confirmacion antes de eliminar una pocion
+
+    //Pide confirmacion antes de eliminar
     function confirmarEliminarPocion(pocion) {
     Alert.alert(
         "Eliminar pocion",
@@ -57,27 +57,27 @@ export default function PocionesScreen({ navigation }) {
     );
 }
 
-    //Elimina la pocion de la base de datos
+    //Elimina la pocion y actualiza la lista
     async function eliminarPocion(id) {
         try {
-            //Elimina la pocion seleccionada mediante Axios
             await axios.delete(`${API_URL}/api/pociones/${id}`);
 
             Alert.alert("Exito", "Pocion eliminada correctamente");
 
-            //Actualiza el listado despues de eliminar
             await cargarPociones();
 
         } catch (error) {
             Alert.alert("Error", "No se pudo eliminar la pocion");
         }
     }
-    //Aplica la busqueda cuando el usuario presiona el boton
+
+    //Aplica la busqueda escrita por el usuario
     function buscarPociones() {
         Keyboard.dismiss();
         setFiltro(busqueda.trim().toLowerCase());
     }
-    //Filtra las pociones por nombre, ingredientes o efectos
+
+    //Filtra por nombre, ingredientes o efectos
     const pocionesFiltradas = pociones.filter(pocion => {
         if (!filtro) return true;
 
@@ -93,7 +93,7 @@ export default function PocionesScreen({ navigation }) {
         );
     });
 
-    //Muestra los datos de cada pocion
+    //Muestra una tarjeta con los datos de cada pocion
     function mostrarPocion({ item }) {
         return (
             <View style={styles.tarjeta}>
@@ -218,7 +218,7 @@ export default function PocionesScreen({ navigation }) {
 
 }
 
-//Define los estilos visuales de la pantalla
+//Estilos visuales de la pantalla
 const styles = StyleSheet.create({
     contenedor: {
         flex: 1,
