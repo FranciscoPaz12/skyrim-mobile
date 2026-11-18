@@ -64,14 +64,7 @@ app.get("/api/ingredientes", async (req, res) => {
 //Valida y guarda un ingrediente
 app.post("/api/ingredientes", async (req, res) => {
     try {
-        const {
-            Nombre,
-            Efecto1,
-            Efecto2,
-            Efecto3,
-            Efecto4,
-            Calidad
-        } = req.body;
+        const {Nombre, Efecto1, Efecto2, Efecto3, Efecto4, Calidad} = req.body;
 
         const textos = [Nombre, Efecto1, Efecto2, Efecto3, Efecto4];
 
@@ -93,19 +86,7 @@ app.post("/api/ingredientes", async (req, res) => {
             `INSERT INTO ingredientes
             (Nombre, Efecto1, Efecto2, Efecto3, Efecto4, Calidad)
             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-                Nombre.trim(),
-
-                Efecto1.trim(),
-
-                Efecto2.trim(),
-
-                Efecto3.trim(),
-
-                Efecto4.trim(),
-
-                Calidad
-            ]
+            [Nombre.trim(), Efecto1.trim(), Efecto2.trim(), Efecto3.trim(), Efecto4.trim(), Calidad]
         );
 
         res.status(201).json({
@@ -127,14 +108,7 @@ app.put("/api/ingredientes/:id", async (req, res) => {
     try {
         const id = Number(req.params.id);
 
-        const {
-            Nombre,
-            Efecto1,
-            Efecto2,
-            Efecto3,
-            Efecto4,
-            Calidad
-        } = req.body;
+        const {Nombre, Efecto1, Efecto2, Efecto3, Efecto4, Calidad} = req.body;
 
         if (!Number.isSafeInteger(id) || id <= 0) {
             return res.status(400).json({
@@ -163,21 +137,7 @@ app.put("/api/ingredientes/:id", async (req, res) => {
              SET Nombre = ?, Efecto1 = ?, Efecto2 = ?,
                  Efecto3 = ?, Efecto4 = ?, Calidad = ?
              WHERE ID = ?`,
-            [
-                Nombre.trim(),
-
-                Efecto1.trim(),
-
-                Efecto2.trim(),
-
-                Efecto3.trim(),
-
-                Efecto4.trim(),
-
-                Calidad,
-
-                id
-            ]
+            [Nombre.trim(), Efecto1.trim(), Efecto2.trim(), Efecto3.trim(), Efecto4.trim(), Calidad, id]
         );
 
         if (resultado.affectedRows === 0) {
@@ -278,13 +238,7 @@ app.post("/api/login", async (req, res) => {
 
         res.json({
             mensaje: "Inicio de sesion exitoso",
-            usuario: {
-                ID: usuarioEncontrado.ID,
-
-                Nombre: usuarioEncontrado.Nombre,
-
-                Usuario: usuarioEncontrado.Usuario
-            }
+            usuario: {ID: usuarioEncontrado.ID, Nombre: usuarioEncontrado.Nombre, Usuario: usuarioEncontrado.Usuario}
         });
 
     } catch (error) {
@@ -376,19 +330,9 @@ app.post("/api/pociones", async (req, res) => {
             });
         }
 
-        const efectos1 = [
-            ingredientes[0].Efecto1,
-            ingredientes[0].Efecto2,
-            ingredientes[0].Efecto3,
-            ingredientes[0].Efecto4
-        ];
+        const efectos1 = [ingredientes[0].Efecto1, ingredientes[0].Efecto2, ingredientes[0].Efecto3, ingredientes[0].Efecto4];
 
-        const efectos2 = [
-            ingredientes[1].Efecto1,
-            ingredientes[1].Efecto2,
-            ingredientes[1].Efecto3,
-            ingredientes[1].Efecto4
-        ];
+        const efectos2 = [ingredientes[1].Efecto1, ingredientes[1].Efecto2, ingredientes[1].Efecto3, ingredientes[1].Efecto4];
 
         const efectosCompartidos = [...new Set(
             efectos1.filter(efecto =>
@@ -418,12 +362,7 @@ app.post("/api/pociones", async (req, res) => {
             `INSERT INTO pociones
              (Nombre, Ingrediente1ID, Ingrediente2ID, Magnitud)
              VALUES (?, ?, ?, ?)`,
-            [
-                Nombre.trim(),
-                Ingrediente1ID,
-                Ingrediente2ID,
-                magnitud
-            ]
+            [Nombre.trim(), Ingrediente1ID, Ingrediente2ID, magnitud]
         );
 
         for (const efecto of efectosCompartidos) {
@@ -560,19 +499,9 @@ app.put("/api/pociones/:id", async (req, res) => {
             });
         }
 
-        const efectos1 = [
-            ingredientes[0].Efecto1,
-            ingredientes[0].Efecto2,
-            ingredientes[0].Efecto3,
-            ingredientes[0].Efecto4
-        ];
+        const efectos1 = [ingredientes[0].Efecto1, ingredientes[0].Efecto2, ingredientes[0].Efecto3, ingredientes[0].Efecto4];
 
-        const efectos2 = [
-            ingredientes[1].Efecto1,
-            ingredientes[1].Efecto2,
-            ingredientes[1].Efecto3,
-            ingredientes[1].Efecto4
-        ];
+        const efectos2 = [ingredientes[1].Efecto1, ingredientes[1].Efecto2, ingredientes[1].Efecto3, ingredientes[1].Efecto4];
 
         const efectosCompartidos = [...new Set(
             efectos1.filter(efecto =>
@@ -600,13 +529,7 @@ app.put("/api/pociones/:id", async (req, res) => {
              SET Nombre = ?, Ingrediente1ID = ?,
                  Ingrediente2ID = ?, Magnitud = ?
              WHERE ID = ?`,
-            [
-                Nombre.trim(),
-                Ingrediente1ID,
-                Ingrediente2ID,
-                magnitud,
-                id
-            ]
+            [Nombre.trim(), Ingrediente1ID, Ingrediente2ID, magnitud, id]
         );
 
         await cliente.execute(
