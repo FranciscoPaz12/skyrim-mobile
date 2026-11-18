@@ -212,7 +212,7 @@ export default function IngredientesScreen({ navigation }) {
                 onPress={() => navigation.navigate("Formulario")}
             >
                 <Text style={styles.textoBotonPociones}>
-                    AGREGAR INGREDIENTE
+                    CREAR INGREDIENTE
                 </Text>
             </TouchableOpacity>
         </View>
